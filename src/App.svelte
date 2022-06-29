@@ -1,31 +1,72 @@
 <script>
   import logo from './assets/svelte.png'
-  import Counter from './lib/Counter.svelte'
+  import Routine from './lib/Routine.svelte'
+	import { invoke } from "@tauri-apps/api/tauri"
 
-  import { Color, ColorInput } from 'color-picker-svelte'
+	import ChromaPicker from 'svelte-chroma-picker'
+import { xlink_attr } from 'svelte/internal'
 
-  let color = new Color('#ff3d91')
+	let color = '#fff'
+  let darkbg = []
+
+	
+	let rgb;
+  let gradient = [];
+  let orig_gradient  = [];
+
+	const handleColorUpdate = ev => {
+		rgb = ev.detail.rgb;
+		invoke("generate_gradient", rgb).then(([grad,orig_grad]) => {
+			gradient = grad;
+      orig_gradient = orig_grad;
+      console.log(gradient);
+		});
+	};
+
+  function get_dark() {
+    console.log("huh1");
+    invoke("send_dark").then((dark) =>{
+      console.log(dark)
+      darkbg = dark
+    });
+  }
+
+
 </script>
 
 <main>
-  <img src={logo} alt="Svelte Logo" />
-  <h1>Hello wrld!</h1>
+  <button style="background:rgb({darkbg[0]}, {darkbg[1]}, {darkbg[2]})" on:click="{get_dark}"> lmao </button>
+	<ChromaPicker bind:color on:update="{handleColorUpdate}"/>
+  <div class="holder">
+    <div class="left">
+    {#each gradient as color}
 
-  <Counter />
-  <ColorInput bind:color title="Color" />
+      <div style="background:rgb({color[0]}, {color[1]}, {color[2]})">
+        {color[0]}, {color[1]}, {color[2]}
+      </div>
+    {/each}
+    </div>
 
-  <p>
-    Visit <a href="https://svelte.dev">svelte.dev</a> to learn how to build Svelte
-    apps.
-  </p>
-
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme">SvelteKit</a> for
-    the officially supported framework, also powered by Vite!
-  </p>
+    <div class="right">
+      {#each orig_gradient as color}
+  
+        <div style="background:rgb({color[0]}, {color[1]}, {color[2]})">
+          {color[0]}, {color[1]}, {color[2]}
+        </div>
+      {/each}
+    </div>
+    <div>
+    </div>
+  </div>
+  <Routine />
 </main>
 
 <style>
+  .holder{
+    display:flex;
+
+  }
+
   :root {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
       Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
